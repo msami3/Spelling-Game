@@ -140,31 +140,6 @@ public class FXNetServer extends Application{
 		return new Server(port, data-> {
 			Platform.runLater(()->{
 				messages.appendText(data.toString() + "\n");
-				if(conn.getUpdateScores()) {
-					for(int i=0;i<conn.getNumPlayers();i++) {
-						String scoreMessage = "Score: " + conn.getClientThread(i).getScore();
-						try{conn.send(i, scoreMessage);
-						}catch(Exception e) {e.printStackTrace();}
-					}
-					conn.setUpdateScores(false);
-				}
-				if(!conn.gameContinues()) {
-					int winnerIndex = -1;
-					for(int i=0;i<conn.getNumPlayers();i++) {
-						if(conn.getClientThread(i).getScore() != 3) {							
-							try{conn.send(i,"You lose");}catch(Exception e) {e.printStackTrace();}
-						}
-						else
-							winnerIndex = i;
-					}
-					try{conn.send(winnerIndex, "You won!");
-					conn.send("Game ended");}catch(Exception e) {e.printStackTrace();}
-					
-					gameDone = true;
-					try {conn.send("New game?");}catch(Exception e) {}
-					
-					
-				}
 			});
 		});
 	}

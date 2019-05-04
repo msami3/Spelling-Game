@@ -7,6 +7,8 @@ import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.function.Consumer;
 
 public abstract class NetworkConnection {
@@ -17,12 +19,14 @@ public abstract class NetworkConnection {
 	private boolean updateScores = false;
 	private boolean gameDone = false;
 	private ArrayList<String> words;
+	private HashMap<String, ArrayList<String>> playWords;
 	
 	
 	public NetworkConnection(Consumer<Serializable> callback) {
 		this.callback = callback;
 		connthread.setDaemon(true);
 		threads = new ArrayList<ClientThread>();
+		playWords = new HashMap<String, ArrayList<String>>();
 		
 	}
 	
@@ -83,7 +87,6 @@ public abstract class NetworkConnection {
 				words.add(line);
 			}
 			reader.close();
-			send("File read in");
 		}
 		catch(Exception e) {
 			e.printStackTrace(); 
@@ -91,118 +94,30 @@ public abstract class NetworkConnection {
 		
 	}
 	
-	public boolean checkTwoInput() {
-		if(threads.size() == 2) {
-			try {
-			}catch(Exception e) {e.printStackTrace();}
-			for(int i=0;i<threads.size();i++) {
-				if(threads.get(i).getChoice() == null)
-					return false;
+	public void sortFile() {
+		String origWord;
+		String scramWord;
+		
+		for(int i=0;i<words.size();i++) {
+			origWord = words.get(i);
+			scramWord = sortString(origWord);
+			ArrayList<String> list = playWords.get(scramWord);
+			if(list == null) {
+				list = new ArrayList<String>();
+				list.add(origWord);
+				playWords.put(scramWord, list);
 			}
-			if(checkWinnerUpdateScore())
-				return true;
-			else
-				return false;
-		}
-		else {
-			return false;
+			else {
+				list.add(origWord);
+				playWords.put(scramWord, list);
+			}
 		}
 	}
 	
-	public boolean checkWinnerUpdateScore() {
-		String p1Choice = threads.get(0).choice;
-		String p2Choice = threads.get(1).choice;
-		
-		if(p1Choice == "Scissors" && p2Choice == "Paper")
-			threads.get(0).score++;
-		
-		else if(p1Choice == "Paper" && p2Choice == "Scissors")
-			threads.get(1).score++;
-		
-		else if(p1Choice == "Paper" && p2Choice == "Rock")
-			threads.get(0).score++;
-		
-		else if(p1Choice == "Rock" && p2Choice == "Paper")
-			threads.get(1).score++;
-		
-		else if(p1Choice == "Rock" && p2Choice == "Lizard")
-			threads.get(0).score++;
-		
-		else if(p1Choice == "Lizard" && p2Choice == "Rock")
-			threads.get(1).score++;
-				
-		else if(p1Choice == "Lizard" && p2Choice == "Spock")
-			threads.get(0).score++;
-		
-		else if(p1Choice == "Spock" && p2Choice == "Lizard")
-			threads.get(1).score++;
-
-		else if(p1Choice == "Spock" && p2Choice == "Scissors")
-			threads.get(0).score++;
-		
-		else if(p1Choice == "Scissors" && p2Choice == "Spock")
-			threads.get(1).score++;
-
-		else if(p1Choice == "Scissors" && p2Choice == "Lizard")
-			threads.get(0).score++;
-		
-		else if(p1Choice == "Lizard" && p2Choice == "Scissors")
-			threads.get(1).score++;
-
-		else if(p1Choice == "Lizard" && p2Choice == "Paper")
-			threads.get(0).score++;
-		
-		else if(p1Choice == "Paper" && p2Choice == "Lizard")
-			threads.get(1).score++;
-
-		else if(p1Choice == "Paper" && p2Choice == "Spock")
-			threads.get(0).score++;
-		
-		else if(p1Choice == "Spock" && p2Choice == "Paper")
-			threads.get(1).score++;
-
-		else if(p1Choice == "Spock" && p2Choice == "Rock")
-			threads.get(0).score++;
-		
-		else if(p1Choice == "Rock" && p2Choice == "Spock")
-			threads.get(1).score++;
-
-		else if(p1Choice == "Rock" && p2Choice == "Scissors")
-			threads.get(0).score++;
-		
-		else if(p1Choice == "Scissors" && p2Choice == "Rock")
-			threads.get(1).score++;
-
-		else {
-			return false;
-		}
-		
-		try{send(1, "Player 1 played " + threads.get(0).getChoice());
-		send(0, "Player 2 played " + threads.get(1).getChoice());}
-		catch(Exception e) {
-			e.printStackTrace();
-		}
-		
-		for(int i=0;i<threads.size();i++) {
-			threads.get(i).choice = null;
-		}
-		updateScores = true;
-		for(int i=0;i<threads.size();i++) {
-			callback.accept("Player" + threads.get(i).player + " score: " + threads.get(i).score);
-			if(threads.get(i).score == 3) {
-				callback.accept("Player " + threads.get(i).player + " won");
-			}
-		}
-		return true;
-	}
-	
-	public boolean gameContinues() {
-		for(int i=0;i<threads.size();i++) {
-			if(threads.get(i).score == 3) {
-				return false;
-			}
-		}
-		return true;
+	public String sortString(String s) {
+		char temp[] = s.toCharArray();
+		Arrays.sort(temp);
+		return new String(temp);
 	}
 	
 	
@@ -219,6 +134,7 @@ public abstract class NetworkConnection {
 				int counter = 1;
 				while(true) {
 					if(counter <= 4) {
+						
 						callback.accept("Number of players connected: " + threads.size());
 						ClientThread t1 = new ClientThread(counter, server.accept());
 						counter++;
@@ -236,7 +152,6 @@ public abstract class NetworkConnection {
 			}
 			catch(Exception e) {
 				e.printStackTrace();
-				//callback.accept("connection Closed");
 			}
 		}
 	}
@@ -262,50 +177,14 @@ public abstract class NetworkConnection {
 				this.out = out;	
 				
 				while(true) {
-					if(threads.size() == 4) {
+					if(threads.size() == 1) {
 						//read in file
-						//assign random word to vector
 						openFile();
-						for(int i = 0;i<words.size();i++) {
-							System.out.println(words.get(i));
-						}
+						sortFile();
+						System.out.println(playWords);
 						send("Game begins");
 					}
 				
-					if(gameContinues()) {
-						if(threads.size() == 4) {
-//							if(threads.get(0).choice == null && threads.get(1).choice == null) {
-//								send(0, "Your turn"); //player 1 turn
-//								send(1, "Waiting on player 1");
-//							}
-//							else if(threads.get(0).choice != null && threads.get(1).choice == null) {
-//								send(1, "Your turn"); //player 2 turn
-//								send(0, "Waiting on player 2");
-//							}
-//							else if(threads.get(0) == null && threads.get(1) != null) {
-//								send("Problem");
-//								System.out.println("Error with assigning turns");
-//							}
-						}
-						
-						else if(threads.size() != 2) {
-							send("Waiting for more players");
-						}
-						
-						Serializable data = (Serializable) in.readObject();
-						String  temp = data.toString();
-						temp = temp.intern();
-						if(choice == null) {
-							this.choice = temp;
-							callback.accept("Player " + player + " choice: " + choice);
-						}
-						
-						if(temp == "Quit") {
-							threads.remove(player-1);
-							break;
-						}
-						checkTwoInput();
-					}
 				}
 			}
 			catch(Exception e){
@@ -313,9 +192,6 @@ public abstract class NetworkConnection {
 			}
 		}
 				
-		public Serializable getChoice() {
-			return this.choice;
-		}
 		
 		public int getScore() {
 			return score;

@@ -1,3 +1,6 @@
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -13,6 +16,8 @@ public abstract class NetworkConnection {
 	private ArrayList<ClientThread> threads;
 	private boolean updateScores = false;
 	private boolean gameDone = false;
+	private ArrayList<String> words;
+	
 	
 	public NetworkConnection(Consumer<Serializable> callback) {
 		this.callback = callback;
@@ -65,6 +70,25 @@ public abstract class NetworkConnection {
 	
 	public ClientThread getClientThread(int index) {
 		return threads.get(index);
+	}
+	
+	public void openFile() {
+		
+		File file = new File("dictionary.txt");
+		words = new ArrayList<String>();
+		try {
+			BufferedReader reader = new BufferedReader(new FileReader(file));
+			String line;
+			while((line = reader.readLine()) != null) {
+				words.add(line);
+			}
+			reader.close();
+			send("File read in");
+		}
+		catch(Exception e) {
+			e.printStackTrace(); 
+		}
+		
 	}
 	
 	public boolean checkTwoInput() {
@@ -239,23 +263,29 @@ public abstract class NetworkConnection {
 				
 				while(true) {
 					if(threads.size() == 4) {
+						//read in file
+						//assign random word to vector
+						openFile();
+						for(int i = 0;i<words.size();i++) {
+							System.out.println(words.get(i));
+						}
 						send("Game begins");
 					}
 				
 					if(gameContinues()) {
-						if(threads.size() == 2) {
-							if(threads.get(0).choice == null && threads.get(1).choice == null) {
-								send(0, "Your turn"); //player 1 turn
-								send(1, "Waiting on player 1");
-							}
-							else if(threads.get(0).choice != null && threads.get(1).choice == null) {
-								send(1, "Your turn"); //player 2 turn
-								send(0, "Waiting on player 2");
-							}
-							else if(threads.get(0) == null && threads.get(1) != null) {
-								send("Problem");
-								System.out.println("Error with assigning turns");
-							}
+						if(threads.size() == 4) {
+//							if(threads.get(0).choice == null && threads.get(1).choice == null) {
+//								send(0, "Your turn"); //player 1 turn
+//								send(1, "Waiting on player 1");
+//							}
+//							else if(threads.get(0).choice != null && threads.get(1).choice == null) {
+//								send(1, "Your turn"); //player 2 turn
+//								send(0, "Waiting on player 2");
+//							}
+//							else if(threads.get(0) == null && threads.get(1) != null) {
+//								send("Problem");
+//								System.out.println("Error with assigning turns");
+//							}
 						}
 						
 						else if(threads.size() != 2) {

@@ -177,7 +177,7 @@ public abstract class NetworkConnection {
 				this.out = out;	
 				
 				while(true) {
-					if(threads.size() == 1) {
+					if(threads.size() == 4) {
 						//read in file
 						openFile();
 						sortFile();

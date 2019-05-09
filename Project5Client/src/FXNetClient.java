@@ -27,77 +27,18 @@ public class FXNetClient extends Application{
 	private boolean gameDone = false;
 	private Button end = new Button();
 	
-	private Parent createContent() {
-		Button rock = new Button("Rock");
-		Image pic = new Image("Rock.jpg");
-		ImageView v = new ImageView(pic);
-		v.setFitHeight(75);
-		v.setFitWidth(75);
-		v.setPreserveRatio(true);
-		rock.setGraphic(v);
-		
-		Button paper = new Button("Paper");
-		pic = new Image("paper.jpg");
-		v = new ImageView(pic);
-		v.setFitHeight(75);
-		v.setFitWidth(75);
-		v.setPreserveRatio(true);
-		paper.setGraphic(v);
-		
-		Button scissors = new Button("Scissors");
-		pic = new Image("scissors.jpg");
-		v = new ImageView(pic);
-		v.setFitHeight(75);
-		v.setFitWidth(75);
-		v.setPreserveRatio(true);
-		scissors.setGraphic(v);
-		
-		Button lizard = new Button("Lizard");
-		pic = new Image("lizard.jpg");
-		v = new ImageView(pic);
-		v.setFitHeight(75);
-		v.setFitWidth(75);
-		v.setPreserveRatio(true);
-		lizard.setGraphic(v);
-		
-		Button spock = new Button("Spock");
-		pic = new Image("spock.jpg");
-		v = new ImageView(pic);
-		v.setFitHeight(75);
-		v.setFitWidth(75);
-		v.setPreserveRatio(true);
-		spock.setGraphic(v);
-		
-		Button exit = new Button("Exit");
-		//score.setText("Score: 0");
-		
-		messages.setPrefSize(75, 75);
+	private Parent createContent() {		
 		TextField input = new TextField();
+		Button done = new Button("Done guessing");
 		
-		EventHandler<ActionEvent> choiceEvent = e ->{
-			String message;
-			Button b = (Button)e.getSource();
-			if(b.getText() == "Rock") {
-				try {conn.send("Rock");}catch(Exception ex1) { System.out.println("Error");}
+		done.setOnAction(event -> {
+			try{
+				conn.send("Done guessing");
 			}
-			else if(b.getText() == "Paper") {
-				try {conn.send("Paper");}catch(Exception ex2) { System.out.println("Error");}
+			catch(Exception e) {
+				e.printStackTrace();
 			}
-			else if(b.getText() == "Scissors") {
-				try {conn.send("Scissors");}catch(Exception ex3) { System.out.println("Error");}
-			}
-			else if(b.getText() == "Lizard") {
-				try {conn.send("Lizard");}catch(Exception ex4) { System.out.println("Error");}
-			}
-			else if(b.getText() == "Spock") {
-				try {conn.send("Spock");}catch(Exception ex5) { System.out.println("Error");}
-			}
-		};
-		rock.setOnAction(choiceEvent);
-		paper.setOnAction(choiceEvent);
-		scissors.setOnAction(choiceEvent);
-		lizard.setOnAction(choiceEvent);
-		spock.setOnAction(choiceEvent);
+		});
 		
 		input.setOnAction(event -> {
 			String message = input.getText();
@@ -110,26 +51,18 @@ public class FXNetClient extends Application{
 			catch(Exception e) {
 				
 			}
-			
-			while(updateScore()) {
-				System.out.println("Did not update");
-			}
-			
+		
 		});
 		
-		VBox choices = new VBox(rock, paper, scissors, lizard, spock);
 		BorderPane root = new BorderPane();
-		root.setLeft(choices);
-		//root.setCenter(score);
-		//root.setAlignment(score, Pos.TOP_CENTER);
+		
 		root.setBottom(messages);
-		root.setAlignment(messages, Pos.BOTTOM_CENTER);
-		root.setTop(exit);
-		root.setAlignment(exit, Pos.TOP_RIGHT);
-		//VBox root = new VBox(20, messages, input);
+		root.setCenter(input);
+		root.setAlignment(input, Pos.CENTER);
+		root.setTop(done);
+		root.setAlignment(done, Pos.TOP_LEFT);
 		root.setPrefSize(400, 400);
 		
-		homePage = root;
 		return root;
 						
 	}
@@ -142,19 +75,6 @@ public class FXNetClient extends Application{
 		BorderPane root = new BorderPane();
 		root.setCenter(end);
 		root.setAlignment(end, Pos.CENTER);
-		
-//		playAgain.setOnAction(e->{
-//			try {
-//				conn.send("Play again");
-//			}catch(Exception ex) {
-//				ex.printStackTrace();
-//			}
-//		});
-//		
-//		quit.setOnAction(e->{
-//			System.exit(0);
-//			try{conn.send("Quit");;}catch(Exception ex) {ex.printStackTrace();}
-//		});
 		
 		root.setPrefSize(400, 400);
 		root.setBottom(messages);

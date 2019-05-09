@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Random;
 import java.util.function.Consumer;
 
 public abstract class NetworkConnection {
@@ -16,9 +17,7 @@ public abstract class NetworkConnection {
 	private ConnThread connthread = new ConnThread();
 	private Consumer<Serializable> callback;
 	private ArrayList<ClientThread> threads;
-	private boolean updateScores = false;
-	private boolean gameDone = false;
-	private ArrayList<String> words;
+	private String scramWord; 
 	private HashMap<String, ArrayList<String>> playWords;
 	
 	
@@ -33,15 +32,8 @@ public abstract class NetworkConnection {
 	public int getNumPlayers() {
 		return threads.size();
 	}
-	
-	public boolean getUpdateScores() {
-		return updateScores;
-	}
-	
-	public void setUpdateScores(boolean b) {
-		updateScores = b;
-	}
-	
+
+		
 	public void startConn() throws Exception{
 		try {
 		connthread.start();
@@ -76,10 +68,11 @@ public abstract class NetworkConnection {
 		return threads.get(index);
 	}
 	
-	public void openFile() {
+	
+	public void sortFile() {
 		
 		File file = new File("dictionary.txt");
-		words = new ArrayList<String>();
+		ArrayList<String> words = new ArrayList<String>();
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(file));
 			String line;
@@ -92,9 +85,6 @@ public abstract class NetworkConnection {
 			e.printStackTrace(); 
 		}
 		
-	}
-	
-	public void sortFile() {
 		String origWord;
 		String scramWord;
 		
@@ -120,6 +110,20 @@ public abstract class NetworkConnection {
 		return new String(temp);
 	}
 	
+	public void pickWord() {
+		/*Random generator = new Random();
+		Object[] values = (String[]) playWords.values().toArray();
+		
+		Object randomValue = values[generator.nextInt(values.length)];
+		
+		System.out.println(randomValue);*/
+		
+	    Object[] crunchyKeys = playWords.keySet().toArray();
+	    Object key = crunchyKeys[new Random().nextInt(crunchyKeys.length)];
+	    scramWord = (String) key;
+
+	}
+	
 	
 	abstract protected boolean isServer();
 	abstract protected String getIP();
@@ -131,10 +135,11 @@ public abstract class NetworkConnection {
 		public void run() {
 			try(ServerSocket server = new ServerSocket(getPort())){
 				
+				sortFile();
+				pickWord();
 				int counter = 1;
 				while(true) {
 					if(counter <= 4) {
-						
 						callback.accept("Number of players connected: " + threads.size());
 						ClientThread t1 = new ClientThread(counter, server.accept());
 						counter++;
@@ -144,6 +149,8 @@ public abstract class NetworkConnection {
 					else {
 						callback.accept("Number of players connected: " + threads.size());
 						callback.accept("Start game");
+						send(scramWord);
+						send("Game begins");
 						break;
 					}	
 				}
@@ -160,7 +167,7 @@ public abstract class NetworkConnection {
 		private String choice; 
 		private int player;
 		private int score;
-		private String continueGame = null;
+		private Boolean played;
 		
 		private Socket socket;
 		private ObjectOutputStream out;
@@ -168,6 +175,7 @@ public abstract class NetworkConnection {
 		ClientThread(int p, Socket s){
 			this.player = p;
 			this.socket = s;
+			this.played = false;
 		}
 		
 		public void run() {
@@ -175,23 +183,36 @@ public abstract class NetworkConnection {
 					ObjectInputStream in = new ObjectInputStream(socket.getInputStream())){
 				
 				this.out = out;	
+				int counter = 1;
 				
 				while(true) {
-					if(threads.size() == 4) {
-						//read in file
-						openFile();
-						sortFile();
-						System.out.println(playWords);
-						send("Game begins");
+					if(threads.size() != 2) {
+						send("Waiting for more players");
 					}
-				
+					else {
+						send(scramWord);
+						send("Game begins");
+						
+						if(threads.get(0).played == false) 
+							send(0, "Your turn");
+						else if(threads.get(1).played == false)
+							send(1, "Your turn");
+						else if(threads.get(2).played == false)
+							send(2, "Your turn");
+						else if(threads.get(3).played == false)
+							send(3, "Your turn");
+					}
+					Serializable data = (Serializable) in.readObject();
+					if(data.toString().intern() == "Done guessing") {
+						threads.get(player-1).played = true;
+					}
+					callback.accept(data);
 				}
 			}
 			catch(Exception e){
 				e.printStackTrace();
 			}
 		}
-				
 		
 		public int getScore() {
 			return score;

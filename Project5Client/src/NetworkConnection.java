@@ -9,6 +9,7 @@ public abstract class NetworkConnection {
 	
 	private ConnThread connthread = new ConnThread();
 	private Consumer<Serializable> callback;
+	private String scramWord;
 	
 	public NetworkConnection(Consumer<Serializable> callback) {
 		this.callback = callback;
@@ -30,6 +31,10 @@ public abstract class NetworkConnection {
 	
 	public ConnThread getConnThread() {
 		return connthread;
+	}
+	
+	public String getScramWord() {
+		return scramWord;
 	}
 	
 	abstract protected boolean isServer();
@@ -54,18 +59,6 @@ public abstract class NetworkConnection {
 				
 				while(true) {
 					Serializable data = (Serializable) in.readObject();
-					if(data.toString().intern() == "1") {
-						score = "1";
-						data = "";
-					}
-					else if(data.toString().intern() == "2") {
-						data = "";
-						score = "2";
-					}
-					else if(data.toString().intern() == "3") {
-						data = "";
-						score = "3";
-					}
 					callback.accept(data);
 				}
 				

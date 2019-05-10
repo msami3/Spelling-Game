@@ -19,6 +19,7 @@ public abstract class NetworkConnection {
 	private ArrayList<ClientThread> threads;
 	private String scramWord; 
 	private HashMap<String, ArrayList<String>> playWords;
+	private ArrayList<String> unscramArray;
 	
 	
 	public NetworkConnection(Consumer<Serializable> callback) {
@@ -52,23 +53,12 @@ public abstract class NetworkConnection {
 		threads.get(index).out.writeObject(data);
 	}
 	
-	public void sendToTwo(Serializable data) throws Exception{
-		for(int i=0;i<threads.size();i++) {
-			threads.get(i).out.writeObject(data);
-		}
-	}
-	
 	public void closeConn() throws Exception{
 		for(int i =0;i<threads.size();i++) {
 			threads.get(i).socket.close();
 		}
 	}
-	
-	public ClientThread getClientThread(int index) {
-		return threads.get(index);
-	}
-	
-	
+
 	public void sortFile() {
 		
 		File file = new File("dictionary.txt");
@@ -121,9 +111,21 @@ public abstract class NetworkConnection {
 	    Object[] crunchyKeys = playWords.keySet().toArray();
 	    Object key = crunchyKeys[new Random().nextInt(crunchyKeys.length)];
 	    scramWord = (String) key;
+	    unscramArray = playWords.get(scramWord);
 
 	}
 	
+	public boolean gameContinues() {
+		if(threads.size() == 4) {
+			for(int i=0;i<threads.size();i++) {
+				if(threads.get(i).played == false)
+					return true;
+			}
+			return false;
+		}
+		else
+			return false;
+	}
 	
 	abstract protected boolean isServer();
 	abstract protected String getIP();
@@ -137,6 +139,7 @@ public abstract class NetworkConnection {
 				
 				sortFile();
 				pickWord();
+				System.out.println(unscramArray);
 				int counter = 1;
 				while(true) {
 					if(counter <= 4) {
@@ -149,7 +152,6 @@ public abstract class NetworkConnection {
 					else {
 						callback.accept("Number of players connected: " + threads.size());
 						callback.accept("Start game");
-						send(scramWord);
 						send("Game begins");
 						break;
 					}	
@@ -171,6 +173,7 @@ public abstract class NetworkConnection {
 		
 		private Socket socket;
 		private ObjectOutputStream out;
+		private ObjectInputStream in;
 		
 		ClientThread(int p, Socket s){
 			this.player = p;
@@ -183,14 +186,10 @@ public abstract class NetworkConnection {
 					ObjectInputStream in = new ObjectInputStream(socket.getInputStream())){
 				
 				this.out = out;	
-				int counter = 1;
+				this.in = in;
 				
 				while(true) {
-					if(threads.size() != 2) {
-						send("Waiting for more players");
-					}
-					else {
-						send(scramWord);
+					if(threads.size() == 4){
 						send("Game begins");
 						
 						if(threads.get(0).played == false) 
@@ -202,14 +201,61 @@ public abstract class NetworkConnection {
 						else if(threads.get(3).played == false)
 							send(3, "Your turn");
 					}
+					
+					else if(threads.size() != 4) {
+						send("Waiting for more players");
+					}
+							
 					Serializable data = (Serializable) in.readObject();
+					
 					if(data.toString().intern() == "Done guessing") {
 						threads.get(player-1).played = true;
 					}
-					callback.accept(data);
+					
+					boolean found = false;
+					for(int i=0;i<unscramArray.size();i++) {
+						if(data.toString().intern() == unscramArray.get(i))
+							found = true;
+					}
+					
+					if(found)
+						threads.get(player-1).score++;
+					else
+						send(player-1, "word not found in dictionary");
+					
+					send(player-1, "Score: " + threads.get(player-1).score);
 				}
 			}
 			catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+		
+		public synchronized void gamePlay() {
+			try{
+				send(player-1, scramWord);
+				send(player-1, "Your turn");
+					while(true) {
+						Serializable data = (Serializable) in.readObject();
+						if(data.toString().intern() == "Done guessing") {
+							threads.get(player-1).played = true;
+							break;
+						}
+						boolean found = false;
+						for(int i=0;i<unscramArray.size();i++) {
+							if(data.toString().intern() == unscramArray.get(i))
+								found = true;
+						}
+						if(found)
+							score++;
+						else
+							send(player-1, "word not found in dictionary");
+						
+						send(player-1, "Score: " + score);
+						callback.accept(data);
+					}
+			}
+			catch(Exception e) {
 				e.printStackTrace();
 			}
 		}

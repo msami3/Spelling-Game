@@ -253,20 +253,83 @@ public class FXNetClient extends Application{
 		EventHandler<ActionEvent> choiceEvent = e ->{
 			String message;
 			Button b = (Button)e.getSource();
-			if(b.getText() == "Rock") {
-				try {conn.send("Rock");}catch(Exception ex1) { System.out.println("Error");}
+			if(b.getText() == "A") {
+				try {conn.send("A");}catch(Exception ex1) { System.out.println("Error");}
 			}
-			else if(b.getText() == "Paper") {
-				try {conn.send("Paper");}catch(Exception ex2) { System.out.println("Error");}
+			else if(b.getText() == "B") {
+				try {conn.send("B");}catch(Exception ex2) { System.out.println("Error");}
 			}
-			else if(b.getText() == "Scissors") {
-				try {conn.send("Scissors");}catch(Exception ex3) { System.out.println("Error");}
+			else if(b.getText() == "C") {
+				try {conn.send("C");}catch(Exception ex3) { System.out.println("Error");}
 			}
-			else if(b.getText() == "Lizard") {
-				try {conn.send("Lizard");}catch(Exception ex4) { System.out.println("Error");}
+			else if(b.getText() == "D") {
+				try {conn.send("D");}catch(Exception ex4) { System.out.println("Error");}
 			}
-			else if(b.getText() == "Spock") {
-				try {conn.send("Spock");}catch(Exception ex5) { System.out.println("Error");}
+			else if(b.getText() == "E") {
+				try {conn.send("E");}catch(Exception ex5) { System.out.println("Error");}
+			}
+			else if(b.getText() == "F") {
+				try {conn.send("F");}catch(Exception ex2) { System.out.println("Error");}
+			}
+			else if(b.getText() == "G") {
+				try {conn.send("G");}catch(Exception ex3) { System.out.println("Error");}
+			}
+			else if(b.getText() == "H") {
+				try {conn.send("H");}catch(Exception ex4) { System.out.println("Error");}
+			}
+			else if(b.getText() == "I") {
+				try {conn.send("I");}catch(Exception ex5) { System.out.println("Error");}
+			}
+			else if(b.getText() == "J") {
+				try {conn.send("J");}catch(Exception ex2) { System.out.println("Error");}
+			}
+			else if(b.getText() == "K") {
+				try {conn.send("K");}catch(Exception ex3) { System.out.println("Error");}
+			}
+			else if(b.getText() == "L") {
+				try {conn.send("L");}catch(Exception ex4) { System.out.println("Error");}
+			}
+			else if(b.getText() == "M") {
+				try {conn.send("M");}catch(Exception ex5) { System.out.println("Error");}
+			}
+			else if(b.getText() == "N") {
+				try {conn.send("N");}catch(Exception ex2) { System.out.println("Error");}
+			}
+			else if(b.getText() == "O") {
+				try {conn.send("O");}catch(Exception ex3) { System.out.println("Error");}
+			}
+			else if(b.getText() == "P") {
+				try {conn.send("P");}catch(Exception ex4) { System.out.println("Error");}
+			}
+			else if(b.getText() == "Q") {
+				try {conn.send("Q");}catch(Exception ex5) { System.out.println("Error");}
+			}
+			else if(b.getText() == "R") {
+				try {conn.send("R");}catch(Exception ex2) { System.out.println("Error");}
+			}
+			else if(b.getText() == "S") {
+				try {conn.send("S");}catch(Exception ex3) { System.out.println("Error");}
+			}
+			else if(b.getText() == "T") {
+				try {conn.send("T");}catch(Exception ex4) { System.out.println("Error");}
+			}
+			else if(b.getText() == "U") {
+				try {conn.send("U");}catch(Exception ex5) { System.out.println("Error");}
+			}
+			else if(b.getText() == "V") {
+				try {conn.send("V");}catch(Exception ex2) { System.out.println("Error");}
+			}
+			else if(b.getText() == "W") {
+				try {conn.send("W");}catch(Exception ex3) { System.out.println("Error");}
+			}
+			else if(b.getText() == "X") {
+				try {conn.send("X");}catch(Exception ex4) { System.out.println("Error");}
+			}
+			else if(b.getText() == "Y") {
+				try {conn.send("Y");}catch(Exception ex5) { System.out.println("Error");}
+			}
+			else if(b.getText() == "Z") {
+				try {conn.send("Z");}catch(Exception ex5) { System.out.println("Error");}
 			}
 		};
 		rock.setOnAction(choiceEvent);

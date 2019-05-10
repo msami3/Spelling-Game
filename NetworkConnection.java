@@ -1,11 +1,17 @@
 package project5;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Random;
 import java.util.function.Consumer;
 
 public abstract class NetworkConnection {
@@ -13,18 +19,16 @@ public abstract class NetworkConnection {
     private ConnThread connthread = new ConnThread();
     private Consumer<Serializable> callback;
     private ArrayList<ClientThread> threads;
+    private String scramWord;
+    private HashMap<String, ArrayList<String>> playWords;
     private boolean updateScores = false;
-    private boolean gameDone = false;
     
     public NetworkConnection(Consumer<Serializable> callback) {
         this.callback = callback;
         connthread.setDaemon(true);
         threads = new ArrayList<ClientThread>();
+        playWords = new HashMap<String, ArrayList<String>>();
         
-    }
-    
-    public int getNumPlayers() {
-        return threads.size();
     }
     
     public boolean getUpdateScores() {
@@ -34,6 +38,11 @@ public abstract class NetworkConnection {
     public void setUpdateScores(boolean b) {
         updateScores = b;
     }
+    
+    public int getNumPlayers() {
+        return threads.size();
+    }
+    
     
     public void startConn() throws Exception{
         try {
@@ -70,18 +79,89 @@ public abstract class NetworkConnection {
     }
     
     
+    public void sortFile() {
+        
+        File file = new File("dictionary.txt");
+        ArrayList<String> words = new ArrayList<String>();
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(file));
+            String line;
+            while((line = reader.readLine()) != null) {
+                words.add(line);
+            }
+            reader.close();
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+        }
+        
+        String origWord;
+        String scramWord;
+        
+        for(int i=0;i<words.size();i++) {
+            origWord = words.get(i);
+            scramWord = sortString(origWord);
+            ArrayList<String> list = playWords.get(scramWord);
+            if(list == null) {
+                list = new ArrayList<String>();
+                list.add(origWord);
+                playWords.put(scramWord, list);
+            }
+            else {
+                list.add(origWord);
+                playWords.put(scramWord, list);
+            }
+        }
+    }
     
+    public String sortString(String s) {
+        char temp[] = s.toCharArray();
+        Arrays.sort(temp);
+        return new String(temp);
+    }
     
-    public boolean gameContinues() {
+    public void pickWord() {
+        /*Random generator = new Random();
+         Object[] values = (String[]) playWords.values().toArray();
+         
+         Object randomValue = values[generator.nextInt(values.length)];
+         
+         System.out.println(randomValue);*/
+        
+        Object[] crunchyKeys = playWords.keySet().toArray();
+        Object key = crunchyKeys[new Random().nextInt(crunchyKeys.length)];
+        scramWord = (String) key;
+        
+    }
+    
+    public boolean startScoring(){
+        String p1Choice = threads.get(0).choice;
+        String p2Choice = threads.get(1).choice;
+        String p3Choice = threads.get(2).choice;
+        String p4Choice = threads.get(3).choice;
+        //for(Object word: playWords.values()) {
+        if(p1Choice == scramWord.getKey()) {
+            threads.get(0).score++;
+        }
+        //}
+        updateScores = true;
         for(int i=0;i<threads.size();i++) {
-            if(threads.get(i).score == 3) {
-                return false;
+            callback.accept("Player" + threads.get(i).player + " score: " + threads.get(i).score);
+            if(threads.get(i).score == 1) {
+                callback.accept("Player " + threads.get(i).player + " won");
             }
         }
         return true;
     }
     
-    
+    public boolean gameContinues() {
+        for(int i=0;i<threads.size();i++) {
+            if(threads.get(i).score == 1) {
+                return false;
+            }
+        }
+        return true;
+    }
     abstract protected boolean isServer();
     abstract protected String getIP();
     abstract protected int getPort();
@@ -92,6 +172,8 @@ public abstract class NetworkConnection {
         public void run() {
             try(ServerSocket server = new ServerSocket(getPort())){
                 
+                sortFile();
+                pickWord();
                 int counter = 1;
                 while(true) {
                     if(counter <= 4) {
@@ -104,6 +186,9 @@ public abstract class NetworkConnection {
                     else {
                         callback.accept("Number of players connected: " + threads.size());
                         callback.accept("Start game");
+                        
+                        send(scramWord);
+                        send("Game begins");
                         break;
                     }
                 }
@@ -112,7 +197,6 @@ public abstract class NetworkConnection {
             }
             catch(Exception e) {
                 e.printStackTrace();
-                //callback.accept("connection Closed");
             }
         }
     }
@@ -121,7 +205,7 @@ public abstract class NetworkConnection {
         private String choice;
         private int player;
         private int score;
-        private String continueGame = null;
+        private Boolean played;
         
         private Socket socket;
         private ObjectOutputStream out;
@@ -129,6 +213,7 @@ public abstract class NetworkConnection {
         ClientThread(int p, Socket s){
             this.player = p;
             this.socket = s;
+            this.played = false;
         }
         
         public void run() {
@@ -136,22 +221,48 @@ public abstract class NetworkConnection {
                 ObjectInputStream in = new ObjectInputStream(socket.getInputStream())){
                 
                 this.out = out;
+                int counter = 1;
                 
-                
+                while(true) {
+                    if(gameContinues()) {
+                        if(threads.size() != 2) {
+                            send("Waiting for more players");
+                        }
+                        else {
+                            send(scramWord);
+                            send("Game begins");
+                            
+                            if(threads.get(0).played == false)
+                                send(0, "Your turn");
+                            else if(threads.get(1).played == false)
+                                send(1, "Your turn");
+                            else if(threads.get(2).played == false)
+                                send(2, "Your turn");
+                            else if(threads.get(3).played == false)
+                                send(3, "Your turn");
+                        }
+                        Serializable data = (Serializable) in.readObject();
+                        if(data.toString().intern() == "Done guessing") {
+                            threads.get(player-1).played = true;
+                        }
+                        callback.accept(data);
+                    }
+                }
             }
             catch(Exception e){
                 e.printStackTrace();
             }
         }
-        
-        public Serializable getChoice() {
-            return this.choice;
+        public boolean getUpdateScores() {
+            return updateScores;
         }
         
+        public void setUpdateScores(boolean b) {
+            updateScores = b;
+        }
         public int getScore() {
             return score;
         }
         
     }
 }
-

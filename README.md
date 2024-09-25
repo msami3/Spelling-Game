@@ -9,7 +9,6 @@ Welcome to the Spelling Game! This repository contains a fun and educational spe
 - [Installation](#installation)
 - [Usage](#usage)
 - [Contributing](#contributing)
-- [License](#license)
 
 ## Features
 

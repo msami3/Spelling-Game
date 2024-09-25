@@ -52,4 +52,4 @@ To get a local copy of this project up and running, follow these steps:
 
 Contributions are welcome! If you'd like to contribute to the Spelling Game, please fork the repository and submit a pull request. Make sure to follow the code of conduct and ensure your code is well-documented.
 
-Feel free to reach out if you have any questions or suggestions. Happy spelling!
+Feel free to reach out if you have any questions or suggestions.
